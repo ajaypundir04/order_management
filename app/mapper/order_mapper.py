@@ -4,6 +4,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger("order_mapper")
 
+
 class OrderMapper:
     def to_entity(self, order_request: CreateOrderModel, order_id: str) -> Order:
         """

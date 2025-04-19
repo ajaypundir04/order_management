@@ -1,7 +1,9 @@
 import os
+import time
+
 import mysql.connector
 from mysql.connector import Error
-import time
+
 
 def run_migrations():
     max_retries = 5
@@ -14,10 +16,7 @@ def run_migrations():
         try:
             # Connect to the database
             connection = mysql.connector.connect(
-                host=db_host,
-                user=db_user,
-                password=db_password,
-                database=db_name
+                host=db_host, user=db_user, password=db_password, database=db_name
             )
 
             cursor = connection.cursor()
@@ -50,7 +49,7 @@ def run_migrations():
                     FOREIGN KEY (order_sell_id) REFERENCES orders(id) ON DELETE RESTRICT,
                     CHECK (matched_quantity > 0)
                 );
-                """
+                """,
             ]
 
             # Execute migration queries
@@ -73,11 +72,12 @@ def run_migrations():
                 raise
         finally:
             # Close cursor and connection if they exist
-            if 'cursor' in locals():
+            if "cursor" in locals():
                 cursor.close()
-            if 'connection' in locals() and connection.is_connected():
+            if "connection" in locals() and connection.is_connected():
                 connection.close()
                 print("Database connection closed")
+
 
 if __name__ == "__main__":
     run_migrations()

@@ -1,5 +1,7 @@
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class OrderResponse(BaseModel):
     id: str = Field(..., alias="id")

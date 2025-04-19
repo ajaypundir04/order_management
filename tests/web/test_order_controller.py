@@ -1,11 +1,13 @@
-import pytest
-from unittest.mock import Mock
 from datetime import datetime
+from decimal import Decimal
+from unittest.mock import Mock
+
+import pytest
 from fastapi.testclient import TestClient
+
+from app.config import app_config
 from app.dto.order_response import OrderResponse
 from app.service.order_service import OrderService
-from app.config import app_config
-from decimal import Decimal
 
 
 # Mock fixture for OrderService
@@ -15,13 +17,14 @@ def mock_order_service(monkeypatch):
     monkeypatch.setattr(app_config, "get_order_service", lambda: mock_service)
     return mock_service
 
+
 # Test case for order creation success
 def test_create_order_success(client: TestClient, mock_order_service):
     order_data = {
         "type": "market",  # This will be converted to 'type_' due to alias
         "side": "buy",
         "instrument": "DE0001234567",
-        "quantity": 100
+        "quantity": 100,
     }
 
     mock_order_service.create_order.return_value = OrderResponse(
@@ -31,7 +34,7 @@ def test_create_order_success(client: TestClient, mock_order_service):
         side="buy",
         instrument="DE0001234567",
         limit_price=None,
-        quantity=100
+        quantity=100,
     )
 
     response = client.post("/orders/", json=order_data)
@@ -46,7 +49,7 @@ def test_create_limit_order_success(client: TestClient, mock_order_service):
         "side": "sell",
         "instrument": "DE0009876543",
         "limit_price": "123.45",
-        "quantity": 10
+        "quantity": 10,
     }
 
     mock_order_service.create_order.return_value = OrderResponse(
@@ -56,7 +59,7 @@ def test_create_limit_order_success(client: TestClient, mock_order_service):
         side="sell",
         instrument="DE0009876543",
         limit_price=Decimal("123.45"),
-        quantity=10
+        quantity=10,
     )
 
     response = client.post("/orders/", json=order_data)
@@ -71,7 +74,7 @@ def test_market_order_with_limit_price_should_fail(client: TestClient):
         "side": "buy",
         "instrument": "DE0001234567",
         "limit_price": "100.00",  # Invalid for market
-        "quantity": 50
+        "quantity": 50,
     }
 
     response = client.post("/orders/", json=order_data)
@@ -84,7 +87,7 @@ def test_limit_order_without_limit_price_should_fail(client: TestClient):
         "type": "limit",
         "side": "sell",
         "instrument": "DE0001234567",
-        "quantity": 50  # Missing limit_price
+        "quantity": 50,  # Missing limit_price
     }
 
     response = client.post("/orders/", json=order_data)
@@ -97,7 +100,7 @@ def test_invalid_instrument_length_should_fail(client: TestClient):
         "type": "market",
         "side": "buy",
         "instrument": "SHORTCODE",  # Invalid length
-        "quantity": 100
+        "quantity": 100,
     }
 
     response = client.post("/orders/", json=order_data)
@@ -110,7 +113,7 @@ def test_invalid_quantity_should_fail(client: TestClient):
         "type": "market",
         "side": "buy",
         "instrument": "DE0001234567",
-        "quantity": 0  # Invalid (must be > 0)
+        "quantity": 0,  # Invalid (must be > 0)
     }
 
     response = client.post("/orders/", json=order_data)
@@ -123,7 +126,7 @@ def test_invalid_order_type_should_fail(client: TestClient):
         "type": "invalidtype",  # Not 'market' or 'limit'
         "side": "buy",
         "instrument": "DE0001234567",
-        "quantity": 100
+        "quantity": 100,
     }
 
     response = client.post("/orders/", json=order_data)
@@ -136,9 +139,9 @@ def test_invalid_order_side_should_fail(client: TestClient):
         "type": "market",
         "side": "hold",  # Not 'buy' or 'sell'
         "instrument": "DE0001234567",
-        "quantity": 100
+        "quantity": 100,
     }
 
     response = client.post("/orders/", json=order_data)
     assert response.status_code == 422
-    assert "side" in response.text   
+    assert "side" in response.text

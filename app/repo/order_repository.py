@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+
 from app.entity.order import Order
+
 
 class OrderRepository:
     def __init__(self, db: Session):

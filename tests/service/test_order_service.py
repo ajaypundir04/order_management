@@ -1,10 +1,12 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, call
-from app.service.order_service import OrderService
+
 from app.dto.order_request import CreateOrderModel
 from app.dto.order_response import OrderResponse
 from app.entity.order import Order  # Assuming your DB entity is `Order`
-from decimal import Decimal
+from app.service.order_service import OrderService
+
 
 @pytest.fixture
 def mock_dependencies():
@@ -12,6 +14,7 @@ def mock_dependencies():
     mapper = Mock()
     processor = Mock()
     return db, mapper, processor
+
 
 @patch("app.service.order_service.OrderRepository")
 @patch("app.service.order_service.IdGenerator.generate", return_value="test-id-123")
@@ -29,7 +32,7 @@ def test_create_order_success(mock_id_gen, mock_repo_class, mock_dependencies):
         side="buy",
         instrument="DE0001234567",
         limit_price=None,
-        quantity=100
+        quantity=100,
     )
 
     fake_entity = Mock(id="test-id-123")
@@ -41,7 +44,7 @@ def test_create_order_success(mock_id_gen, mock_repo_class, mock_dependencies):
         "side": "buy",
         "instrument": "DE0001234567",
         "limit_price": None,
-        "quantity": 100
+        "quantity": 100,
     }
 
     # Act

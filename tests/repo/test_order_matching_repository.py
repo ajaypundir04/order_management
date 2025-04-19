@@ -1,26 +1,29 @@
-import pytest
+from typing import List
 from unittest.mock import MagicMock
+
+import pytest
+from sqlalchemy.orm import Session
+
 from app.entity.order_matching import OrderMatching
 from app.repo.order_matching_repository import OrderMatchingRepository
-from sqlalchemy.orm import Session
-from typing import List
+
 
 @pytest.fixture
 def mock_db():
     return MagicMock(spec=Session)
 
+
 @pytest.fixture
 def order_matching_repository(mock_db):
     return OrderMatchingRepository(db=mock_db)
 
+
 @pytest.fixture
 def fake_order_matching():
     return OrderMatching(
-        order_buy_id="ord1",
-        order_sell_id="ord2",
-        matched_quantity=10,
-        instrument="XYZ"
+        order_buy_id="ord1", order_sell_id="ord2", matched_quantity=10, instrument="XYZ"
     )
+
 
 def test_save_order_matching(order_matching_repository, mock_db, fake_order_matching):
     mock_db.add = MagicMock()
@@ -35,8 +38,11 @@ def test_save_order_matching(order_matching_repository, mock_db, fake_order_matc
 
     assert saved_order_matching == fake_order_matching
 
+
 def test_get_by_order_id(order_matching_repository, mock_db, fake_order_matching):
-    mock_db.query.return_value.filter.return_value.all.return_value = [fake_order_matching]
+    mock_db.query.return_value.filter.return_value.all.return_value = [
+        fake_order_matching
+    ]
 
     result: List[OrderMatching] = order_matching_repository.get_by_order_id("ord1")
 

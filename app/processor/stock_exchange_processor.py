@@ -1,18 +1,28 @@
-from sqlalchemy.orm import sessionmaker, Session
-from app.utils.logger import get_logger
-import threading
 import queue
+import threading
 import time
+
+from sqlalchemy.orm import Session, sessionmaker
+
 from app.entity.order import Order
 from app.entity.order_matching import OrderMatching
 from app.repo.order_matching_repository import OrderMatchingRepository
-from app.stock_exchange import place_order, OrderPlacementError
+from app.stock_exchange import OrderPlacementError, place_order
+from app.utils.logger import get_logger
+
 from .order_book import OrderBook
 
 logger = get_logger("stock_exchange_processor")
 
+
 class StockExchangeProcessor:
-    def __init__(self, session_factory: sessionmaker, order_book: OrderBook, max_retries: int = 3, retry_delay: float = 5.0):
+    def __init__(
+        self,
+        session_factory: sessionmaker,
+        order_book: OrderBook,
+        max_retries: int = 3,
+        retry_delay: float = 5.0,
+    ):
         self.q = queue.Queue()
         self.session_factory = session_factory
         self.max_retries = max_retries
@@ -47,7 +57,7 @@ class StockExchangeProcessor:
 
                 # Add order to order book
                 self.order_book.add_order(order)
-                
+
                 # Temporarily treat SUBMITTED as OPEN for matching
                 if order.status == "SUBMITTED":
                     order.status = "OPEN"
@@ -60,11 +70,16 @@ class StockExchangeProcessor:
                         place_order(order)
                         order.status = "SUBMITTED"
                         session.commit()
-                        logger.info(f"Order submitted to exchange without match: {order.id}")
+                        logger.info(
+                            f"Order submitted to exchange without match: {order.id}"
+                        )
                         self.retry_counts.pop(order_id, None)
                     except OrderPlacementError as e:
                         retry_count = self.retry_counts.get(order_id, 0)
-                        if retry_count < self.max_retries and "Connection not available" in str(e):
+                        if (
+                            retry_count < self.max_retries
+                            and "Connection not available" in str(e)
+                        ):
                             self.retry_counts[order_id] = retry_count + 1
                             logger.warning(
                                 f"Transient error for order {order_id} (attempt {retry_count + 1}/{self.max_retries}): {str(e)}. "
@@ -75,7 +90,9 @@ class StockExchangeProcessor:
                             self.q.put(order_id)
                             continue
                         else:
-                            logger.error(f"Failed to place order {order_id} after {retry_count} retries: {str(e)}")
+                            logger.error(
+                                f"Failed to place order {order_id} after {retry_count} retries: {str(e)}"
+                            )
                             order.status = "FAILED"
                             session.commit()
                             self.retry_counts.pop(order_id, None)
@@ -88,14 +105,20 @@ class StockExchangeProcessor:
                             break
 
                         matched_quantity = min(remaining_quantity, match.quantity)
-                        logger.debug(f"Matched order {order.id} with {match.id}: {matched_quantity} units")
+                        logger.debug(
+                            f"Matched order {order.id} with {match.id}: {matched_quantity} units"
+                        )
 
                         # Record match
                         match_record = OrderMatching(
-                            order_buy_id=order.id if order.side.lower() == "buy" else match.id,
-                            order_sell_id=order.id if order.side.lower() == "sell" else match.id,
+                            order_buy_id=(
+                                order.id if order.side.lower() == "buy" else match.id
+                            ),
+                            order_sell_id=(
+                                order.id if order.side.lower() == "sell" else match.id
+                            ),
                             matched_quantity=matched_quantity,
-                            instrument=order.instrument
+                            instrument=order.instrument,
                         )
                         order_matching_repo.save(match_record)
 
@@ -112,14 +135,18 @@ class StockExchangeProcessor:
                         if match.quantity == 0:
                             self.order_book.remove_order(match.id)
 
-                        logger.info(f"Updated orders: {order.id} ({order.quantity}), {match.id} ({match.quantity})")
+                        logger.info(
+                            f"Updated orders: {order.id} ({order.quantity}), {match.id} ({match.quantity})"
+                        )
 
                     session.commit()
                     logger.info(f"Order {order_id} processed successfully with matches")
                     self.retry_counts.pop(order_id, None)
 
             except Exception as e:
-                logger.error(f"Failed to process order {order_id}: {str(e)}", exc_info=True)
+                logger.error(
+                    f"Failed to process order {order_id}: {str(e)}", exc_info=True
+                )
                 session.rollback()
                 self.retry_counts.pop(order_id, None)
                 self.order_book.remove_order(order_id)

@@ -1,6 +1,9 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, UniqueConstraint
-from app.entity.base import Base
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Float, Integer, String, UniqueConstraint
+
+from app.entity.base import Base
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -14,4 +17,4 @@ class Order(Base):
     quantity = Column(Integer, nullable=False)
     status = Column(String(10), default="OPEN", nullable=False)
 
-    __table_args__ = (UniqueConstraint('order_id', name='uq_order_id'),)
+    __table_args__ = (UniqueConstraint("order_id", name="uq_order_id"),)

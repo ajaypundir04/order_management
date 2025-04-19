@@ -1,12 +1,12 @@
-import pytest
-from unittest.mock import Mock, patch
-from datetime import datetime
 import time
-from app.processor.stock_exchange_processor import StockExchangeProcessor
+from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
+
 from app.entity.order import Order
 from app.processor.order_book import OrderBook
-from app.stock_exchange import place_order, OrderPlacementError
-from app.repo.order_matching_repository import OrderMatchingRepository
+from app.processor.stock_exchange_processor import StockExchangeProcessor
 
 
 @pytest.fixture
@@ -15,19 +15,25 @@ def session_mock():
     mock_session.merge.side_effect = lambda obj, load=True: obj
     return mock_session
 
+
 @pytest.fixture
 def session_factory_mock(session_mock):
     factory = Mock()
     factory.return_value = session_mock
     return factory
 
+
 @pytest.fixture
 def order_book():
     return OrderBook()
 
+
 @pytest.fixture
 def processor(session_factory_mock, order_book):
-    return StockExchangeProcessor(session_factory=session_factory_mock, order_book=order_book)
+    return StockExchangeProcessor(
+        session_factory=session_factory_mock, order_book=order_book
+    )
+
 
 @pytest.fixture
 def fake_order():
@@ -39,8 +45,9 @@ def fake_order():
         quantity=10,
         instrument="XYZ",
         limit_price=100.0,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
+
 
 @pytest.fixture
 def matching_order():
@@ -52,13 +59,21 @@ def matching_order():
         quantity=10,
         instrument="XYZ",
         limit_price=100.0,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
 @patch("app.processor.stock_exchange_processor.place_order")
 @patch("app.processor.stock_exchange_processor.OrderMatchingRepository")
-def test_successful_order_match(order_matching_repo_mock_class, place_order_mock, processor, session_factory_mock, fake_order, matching_order, order_book):
+def test_successful_order_match(
+    order_matching_repo_mock_class,
+    place_order_mock,
+    processor,
+    session_factory_mock,
+    fake_order,
+    matching_order,
+    order_book,
+):
     session = session_factory_mock.return_value
     session.query.return_value.get.return_value = fake_order
     order_book.add_order(matching_order)
@@ -77,7 +92,15 @@ def test_successful_order_match(order_matching_repo_mock_class, place_order_mock
 
 @patch("app.processor.stock_exchange_processor.place_order")
 @patch("app.processor.stock_exchange_processor.OrderMatchingRepository")
-def test_partial_order_match(order_matching_repo_mock_class, place_order_mock, processor, session_factory_mock, fake_order, matching_order, order_book):
+def test_partial_order_match(
+    order_matching_repo_mock_class,
+    place_order_mock,
+    processor,
+    session_factory_mock,
+    fake_order,
+    matching_order,
+    order_book,
+):
     fake_order.quantity = 10
     matching_order.quantity = 5
     session = session_factory_mock.return_value
@@ -98,7 +121,15 @@ def test_partial_order_match(order_matching_repo_mock_class, place_order_mock, p
 
 @patch("app.processor.stock_exchange_processor.place_order")
 @patch("app.processor.stock_exchange_processor.OrderMatchingRepository")
-def test_no_match_found(order_matching_repo_mock_class, place_order_mock, processor, session_factory_mock, fake_order, matching_order, order_book):
+def test_no_match_found(
+    order_matching_repo_mock_class,
+    place_order_mock,
+    processor,
+    session_factory_mock,
+    fake_order,
+    matching_order,
+    order_book,
+):
     session = session_factory_mock.return_value
     session.query.return_value.get.return_value = fake_order
     order_matching_repo_mock = Mock()
@@ -114,7 +145,14 @@ def test_no_match_found(order_matching_repo_mock_class, place_order_mock, proces
 
 @patch("app.processor.stock_exchange_processor.place_order")
 @patch("app.processor.stock_exchange_processor.OrderMatchingRepository")
-def test_order_not_found_in_db(order_matching_repo_mock_class, place_order_mock, processor, session_factory_mock, fake_order, order_book):
+def test_order_not_found_in_db(
+    order_matching_repo_mock_class,
+    place_order_mock,
+    processor,
+    session_factory_mock,
+    fake_order,
+    order_book,
+):
     session = session_factory_mock.return_value
     session.query.return_value.get.return_value = None
     order_book.add_order(fake_order)
