@@ -7,3 +7,4 @@ httpx==0.23.0
 mysql-connector-python==9.0.0
 sortedcontainers==2.4.0
 requests==2.31.0
+pre-commiy==3.5.0
