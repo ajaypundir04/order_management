@@ -10,5 +10,5 @@
             python-version: '3.9.18'
         - run: pip install -r requirements.txt
         - run: pre-commit run --all-files
-        - run: pytest --cov=app --cov-report=xml
+        - run: pytest tests/
         - uses: codecov/codecov-action@v3
