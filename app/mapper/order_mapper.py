@@ -1,11 +1,11 @@
-from app.dto.order_request import OrderRequest
+from app.dto.order_request import CreateOrderModel
 from app.entity.order import Order
 from app.utils.logger import get_logger
 
 logger = get_logger("order_mapper")
 
 class OrderMapper:
-    def to_entity(self, order_request: OrderRequest, order_id: str) -> Order:
+    def to_entity(self, order_request: CreateOrderModel, order_id: str) -> Order:
         """
         Maps an OrderRequest DTO to an Order entity.
 

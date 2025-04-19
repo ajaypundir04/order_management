@@ -1,9 +1,12 @@
-import pytest as pytest
-from starlette.testclient import TestClient
 
-from app.api import app
-
+import pytest
+from fastapi.testclient import TestClient
+from app.api import get_app  
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.entity import base
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    return TestClient(get_app())
+

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.dto.order_request import OrderRequest
+from app.dto.order_request import CreateOrderModel
 from app.dto.order_response import OrderResponse
 from app.repo.order_repository import OrderRepository
 from app.utils.id_generator import IdGenerator
@@ -25,7 +25,7 @@ class OrderService:
         self.mapper = mapper  
         logger.info("OrderService initialized")
 
-    def create_order(self, order: OrderRequest) -> OrderResponse:
+    def create_order(self, order: CreateOrderModel) -> OrderResponse:
         logger.info(f"Creating order: {order.dict()}")
         order_id = IdGenerator.generate()
         db_order = self.mapper.to_entity(order, order_id)  

@@ -7,16 +7,18 @@ from app.entity.order import Order
 from app.entity.order_matching import OrderMatching
 from app.repo.order_matching_repository import OrderMatchingRepository
 from app.stock_exchange import place_order, OrderPlacementError
+from .order_book import OrderBook
 
 logger = get_logger("stock_exchange_processor")
 
 class StockExchangeProcessor:
-    def __init__(self, session_factory: sessionmaker, max_retries: int = 3, retry_delay: float = 5.0):
+    def __init__(self, session_factory: sessionmaker, order_book: OrderBook, max_retries: int = 3, retry_delay: float = 5.0):
         self.q = queue.Queue()
         self.session_factory = session_factory
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.retry_counts = {}
+        self.order_book = order_book
         self.thread = threading.Thread(target=self._worker, daemon=True)
         self.thread.start()
         logger.info("StockExchangeProcessor thread started")
@@ -33,14 +35,19 @@ class StockExchangeProcessor:
                     logger.debug(f"Order {order_id} not found")
                     session.commit()
                     self.retry_counts.pop(order_id, None)
+                    self.order_book.remove_order(order_id)
                     continue
 
                 if order.status not in ("OPEN", "SUBMITTED"):
                     logger.debug(f"Order {order_id} is not open or submitted")
                     session.commit()
                     self.retry_counts.pop(order_id, None)
+                    self.order_book.remove_order(order_id)
                     continue
 
+                # Add order to order book
+                self.order_book.add_order(order)
+                
                 # Temporarily treat SUBMITTED as OPEN for matching
                 if order.status == "SUBMITTED":
                     order.status = "OPEN"
@@ -72,6 +79,7 @@ class StockExchangeProcessor:
                             order.status = "FAILED"
                             session.commit()
                             self.retry_counts.pop(order_id, None)
+                            self.order_book.remove_order(order_id)
                             continue
                 else:
                     remaining_quantity = order.quantity
@@ -98,6 +106,12 @@ class StockExchangeProcessor:
                         match.status = "MATCHED" if match.quantity == 0 else "PARTIAL"
                         remaining_quantity -= matched_quantity
 
+                        # Update order book
+                        if order.quantity == 0:
+                            self.order_book.remove_order(order.id)
+                        if match.quantity == 0:
+                            self.order_book.remove_order(match.id)
+
                         logger.info(f"Updated orders: {order.id} ({order.quantity}), {match.id} ({match.quantity})")
 
                     session.commit()
@@ -108,24 +122,19 @@ class StockExchangeProcessor:
                 logger.error(f"Failed to process order {order_id}: {str(e)}", exc_info=True)
                 session.rollback()
                 self.retry_counts.pop(order_id, None)
+                self.order_book.remove_order(order_id)
             finally:
                 session.close()
                 self.q.task_done()
 
     def _find_matches(self, session: Session, order: Order):
-        opposite_side = "sell" if order.side.lower() == "buy" else "buy"
-        query = session.query(Order).filter(
-            Order.instrument == order.instrument,
-            Order.side == opposite_side,
-            Order.status.in_(["OPEN", "SUBMITTED"])  # Include SUBMITTED orders
-        )
-        if order.type.lower() == "limit":
-            if order.side.lower() == "buy":
-                query = query.filter(Order.limit_price <= order.limit_price)
-            else:
-                query = query.filter(Order.limit_price >= order.limit_price)
-        query = query.order_by(Order.created_at.asc())
-        return query.all()
+        """Find matching orders using the order book, ensuring orders are bound to the session"""
+        # Merge the order into the current session to ensure it's attached
+        order = session.merge(order, load=True)
+        matches = self.order_book.get_matching_orders(order)
+        # Merge matching orders into the current session
+        matches = [session.merge(match, load=True) for match in matches]
+        return matches
 
     def enqueue(self, order: Order):
         logger.info(f"Enqueuing order: {order.id}")

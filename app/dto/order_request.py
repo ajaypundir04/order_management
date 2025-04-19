@@ -2,7 +2,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, condecimal, conint, constr, root_validator
 from app.dto.types import OrderType, OrderSide
 
-class OrderRequest(BaseModel):
+class CreateOrderModel(BaseModel):
     type_: OrderType = Field(..., alias="type")
     side: OrderSide
     instrument: constr(min_length=12, max_length=12)  # type: ignore

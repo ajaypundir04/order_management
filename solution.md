@@ -129,8 +129,9 @@ To handle async updates (e.g., execution information) from the stock exchange:
    - Replace `queue.Queue` with a distributed queue (e.g., RabbitMQ) for multi-instance processing.
    - Deploy `StockExchangeProcessor` as a separate service with multiple workers.
 2. **Advanced Order Matching**:
-   - Implement a proper order book with priority (price-time precedence).
-   - Support market orders and partial fills.
+  Use a more efficient data structure for price-time precedence, such as a balanced binary search tree (e.g., AVL or Red-Black tree) or a heap-based priority queue for each price level.
+  - Reduces time complexity for inserting and removing orders (from O(n log n) for sorting to O(log n) for tree operations).
+  - Improves matching performance for large order books
 3. **Monitoring and Metrics**:
    - Add Prometheus metrics for order processing rate, match rate, and error rate.
    - Integrate with a logging service (e.g., ELK stack) for centralized logs.
@@ -158,7 +159,6 @@ To handle async updates (e.g., execution information) from the stock exchange:
 ## Assumptions
 - The API doesn’t need authentication for this task.
 - Simple Order matching with audits can be found in the order_matching table.
-- **Limit Orders Only**: I assumed all orders are limit orders, matching when buy `limit_price` ≥ sell `limit_price` for the same `instrument`.
 - **Basic Error Handling**: I assumed catching all exceptions and rolling back is sufficient, but database errors might need retries or better status updates.
 - **Specific Retry Condition**: I assumed retries only for “Connection not available” errors are enough, but other errors might need retries too.
 - **Single-Threaded Processing Sufficient**: I assumed one background thread in `StockExchangeProcessor` is enough for now, but  it might not handle many orders quickly, which could be a problem for scalability.
