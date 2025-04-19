@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    image: lemon_markets_orders
+    container_name: lemon_markets_orders_app
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=lemon_markets
+    volumes:
+      - ./app:/app/app
+      - ./db:/app/db
+    command: ["sh", "-c", "python app/migrate.py && uvicorn app.api:app --host 0.0.0.0 --port 8000"]
+
+  db:
+    image: mysql:8.0
+    container_name: lemon_markets_orders_db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: lemon_markets
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-data:
