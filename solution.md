@@ -72,7 +72,7 @@ This solution implements a REST API for placing stock orders via a `POST /orders
 - **Migration**:
   - Creates `orders` and `order_matching` tables with foreign keys and indexes.
 
-## Bonus Tasks
+## Bonus Tasks 
 ### High Volume of Async Updates via Socket Connection
 To handle async updates (e.g., execution information) from the stock exchange:
 - **WebSocket Integration**:
@@ -94,35 +94,6 @@ To handle async updates (e.g., execution information) from the stock exchange:
   - Store incoming updates in a persistent queue before processing to prevent data loss.
   - Implement retry logic for database update failures.
 
-**Challenges**:
-- Ensuring consistency between `orders` and `executions` (use transactions).
-- Handling high throughput (optimize database queries, use batch updates).
-
-### GitHub Actions Workflow
-- **Workflow**: Add `.github/workflows/ci.yml` to run tests and linting on push/pull requests.
-- **Steps**:
-  - Set up Python 3.
-  - Install dependencies (`requirements.txt`).
-  - Run `pre-commit` checks.
-  - Execute `pytest` with coverage.
-  - Report coverage to Codecov or similar.
-- **Example**:
-  ```yaml
-  name: CI
-  on: [push, pull_request]
-  jobs:
-    test:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-python@v4
-          with:
-            python-version: '3.8'
-        - run: pip install -r requirements.txt
-        - run: pre-commit run --all-files
-        - run: pytest --cov=app --cov-report=xml
-        - uses: codecov/codecov-action@v3
-  ```
 
 ## Future Improvements
 1. **Distributed Processing**:
@@ -155,6 +126,7 @@ To handle async updates (e.g., execution information) from the stock exchange:
 - **Asynchronous Processing**:
   - Using a background thread in `StockExchangeProcessor` to process orders was new to me. I had issues with thread safety and ensuring the queue didn’t block the API response.
   - **Challenge**: Learning Python’s `threading` and `queue` modules, and debugging why some orders weren’t processed, was a steep learning curve.  
+- Ensuring consistency between `orders` (use transactions).
 
 ## Assumptions
 - The API doesn’t need authentication for this task.
@@ -163,6 +135,7 @@ To handle async updates (e.g., execution information) from the stock exchange:
 - **Specific Retry Condition**: I assumed retries only for “Connection not available” errors are enough, but other errors might need retries too.
 - **Single-Threaded Processing Sufficient**: I assumed one background thread in `StockExchangeProcessor` is enough for now, but  it might not handle many orders quickly, which could be a problem for scalability.
 - **In-Memory Queue Safe**: I assumed using `queue.Queue` is fine, but  if the app crashes, enqueued orders could be lost, which might break the guarantee of order placement.
+- Handling high throughput (optimize database queries, use batch updates).
 
 ## Conclusion
 The solution meets all requirements with a scalable, reliable architecture. The `OrderService` and `StockExchangeProcessor` handle order creation, storage, matching, and placement, with robust error handling and logging. Tests cover unit, integration, and end-to-end scenarios, and bonus tasks are addressed with proposed implementations. Future improvements focus on distributed processing, advanced matching, and monitoring to handle real-world trading volumes.

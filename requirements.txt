@@ -2,9 +2,16 @@ fastapi==0.85.0
 uvicorn==0.18.3
 pydantic==1.10.2
 sqlalchemy==1.4.41
-pytest==7.4.0
-httpx==0.23.0
 mysql-connector-python==9.0.0
 sortedcontainers==2.4.0
 requests==2.31.0
-pre-commiy==3.5.0
+
+# Test & Dev
+pytest==7.4.0
+httpx==0.23.0
+pre-commit==3.5.0
+
+# Dependencies with compatible versions
+anyio==3.7.1              # compatible with starlette
+httpcore==0.15.0
+h11==0.12.0               # required by httpcore <0.13
