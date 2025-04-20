@@ -151,6 +151,7 @@ class StockExchangeProcessor:
                 self.retry_counts.pop(order_id, None)
                 self.order_book.remove_order(order_id)
             finally:
+                session.expunge_all()
                 session.close()
                 self.q.task_done()
 
