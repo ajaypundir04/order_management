@@ -5,20 +5,27 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api import get_app  # Ensure the app is imported
 from app.config import app_config
 from app.dto.order_response import OrderResponse
 from app.service.order_service import OrderService
 
 
-# Mock fixture for OrderService
 @pytest.fixture
-def mock_order_service(monkeypatch):
+def mock_order_service():
     mock_service = Mock(spec=OrderService)
-    monkeypatch.setattr(app_config, "get_order_service", lambda: mock_service)
     return mock_service
 
 
-# Test case for order creation success
+@pytest.fixture
+def client(mock_order_service):
+    app = get_app()
+
+    app.dependency_overrides[app_config.get_order_service] = lambda: mock_order_service
+
+    return TestClient(app)
+
+
 def test_create_order_success(client: TestClient, mock_order_service):
     order_data = {
         "type": "market",  # This will be converted to 'type_' due to alias
@@ -27,6 +34,7 @@ def test_create_order_success(client: TestClient, mock_order_service):
         "quantity": 100,
     }
 
+    # Mock the response of the create_order function
     mock_order_service.create_order.return_value = OrderResponse(
         id="1",
         created_at=datetime.utcnow().isoformat(),
@@ -37,8 +45,10 @@ def test_create_order_success(client: TestClient, mock_order_service):
         quantity=100,
     )
 
+    # Make the request
     response = client.post("/orders/", json=order_data)
 
+    # Assertions to verify the response
     assert response.status_code == 201
     assert response.json()["type"] == "market"
 
@@ -52,6 +62,7 @@ def test_create_limit_order_success(client: TestClient, mock_order_service):
         "quantity": 10,
     }
 
+    # Mock the response of the create_order function
     mock_order_service.create_order.return_value = OrderResponse(
         id="2",
         created_at=datetime.utcnow().isoformat(),
