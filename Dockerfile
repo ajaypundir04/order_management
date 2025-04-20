@@ -14,7 +14,6 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy application and migration files into the container
 COPY ./app ./app
-COPY ./db ./db
 
 EXPOSE 8000
 
