@@ -1,4 +1,4 @@
-# Solution Documentation
+# Order Management Solution
 
 ## Overview
 This solution implements a REST API for placing stock orders via a `POST /orders` endpoint, as per the provided task requirements. The system uses Python with FastAPI, SQLAlchemy, and MySQL to store orders, process them asynchronously, and place them on a stock exchange. 

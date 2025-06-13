@@ -6,8 +6,12 @@ from app.entity.order import Order
 class OrderBook:
     def __init__(self):
         # Use defaultdict to store orders at each price level
-        self.bids = defaultdict(list)  # {price: [(order_id, order, timestamp)]}
-        self.asks = defaultdict(list)  # {price: [(order_id, order, timestamp)]}
+        self.bids = defaultdict(
+            list
+        )  # {price: [(order_id, order, timestamp)]} list of buy orders
+        self.asks = defaultdict(
+            list
+        )  # {price: [(order_id, order, timestamp)]} list of sell orders
         self.orders = {}  # {order_id: order}
 
     def add_order(self, order: Order):
